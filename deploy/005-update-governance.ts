@@ -7,7 +7,6 @@ import { Contracts as Mainnet } from "../networks/mainnet.json";
 //TESTNET DEPLOYED CONTRACTS
 import { Contracts as Testnet } from "../networks/testnet.json";
 //MAINNET DEPLOYED CONTRACTS
-import { GovernorBravoDelegate } from "../typechain/contracts/Governance/";
 
 const networkName: string = network.name === "bscmainnet" ? "bscmainnet" : "bsctestnet";
 
@@ -113,7 +112,7 @@ const func: DeployFunction = async function (hre: HardhatRuntimeEnvironment) {
     const governorProxy_Impl = (await ethers.getContractAt(
       "GovernorBravoDelegate",
       addresses[networkName].governorProxy,
-    )) as GovernorBravoDelegate;
+    ));
     tx = await governorProxy_Impl.initialize(
       addresses[networkName].xvsVault,
       PROPOSAL_CONFIGS,
