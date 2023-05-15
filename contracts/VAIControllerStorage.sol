@@ -1,26 +1,26 @@
 pragma solidity ^0.5.16;
 
-import "./ComptrollerInterface.sol";
+import "../../Comptroller/ComptrollerInterface.sol";
 
 contract VAIUnitrollerAdminStorage {
     /**
-    * @notice Administrator for this contract
-    */
+     * @notice Administrator for this contract
+     */
     address public admin;
 
     /**
-    * @notice Pending administrator for this contract
-    */
+     * @notice Pending administrator for this contract
+     */
     address public pendingAdmin;
 
     /**
-    * @notice Active brains of Unitroller
-    */
+     * @notice Active brains of Unitroller
+     */
     address public vaiControllerImplementation;
 
     /**
-    * @notice Pending brains of Unitroller
-    */
+     * @notice Pending brains of Unitroller
+     */
     address public pendingVAIControllerImplementation;
 }
 
@@ -30,7 +30,6 @@ contract VAIControllerStorageG1 is VAIUnitrollerAdminStorage {
     struct VenusVAIState {
         /// @notice The last updated venusVAIMintIndex
         uint224 index;
-
         /// @notice The block number the index was last updated at
         uint32 block;
     }
@@ -57,4 +56,31 @@ contract VAIControllerStorageG2 is VAIControllerStorageG1 {
 
     /// @notice Guard variable for re-entrancy checks
     bool internal _notEntered;
+
+    /// @notice The base rate for stability fee
+    uint public baseRateMantissa;
+
+    /// @notice The float rate for stability fee
+    uint public floatRateMantissa;
+
+    /// @notice The address for VAI interest receiver
+    address public receiver;
+
+    /// @notice Accumulator of the total earned interest rate since the opening of the market. For example: 0.6 (60%)
+    uint public vaiMintIndex;
+
+    /// @notice Block number that interest was last accrued at
+    uint internal accrualBlockNumber;
+
+    /// @notice Global vaiMintIndex as of the most recent balance-changing action for user
+    mapping(address => uint) internal vaiMinterInterestIndex;
+
+    /// @notice Tracks the amount of mintedVAI of a user that represents the accrued interest
+    mapping(address => uint) public pastVAIInterest;
+
+    /// @notice VAI mint cap
+    uint public mintCap;
+
+    /// @notice Access control manager address
+    address public accessControl;
 }

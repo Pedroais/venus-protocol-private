@@ -136,19 +136,9 @@ contract VTokenInterface is VTokenStorage {
     event Mint(address minter, uint mintAmount, uint mintTokens);
 
     /**
-     * @notice Event emitted when tokens are minted behalf by payer to receiver
-     */
-    event MintBehalf(address payer, address receiver, uint mintAmount, uint mintTokens);
-
-    /**
      * @notice Event emitted when tokens are redeemed
      */
     event Redeem(address redeemer, uint redeemAmount, uint redeemTokens);
-
-    /**
-     * @notice Event emitted when tokens are redeemed and fee are transferred
-     */
-    event RedeemFee(address redeemer, uint feeAmount, uint redeemTokens);
 
     /**
      * @notice Event emitted when underlying is borrowed
@@ -262,7 +252,6 @@ contract VBep20Interface is VBep20Storage {
     /*** User Interface ***/
 
     function mint(uint mintAmount) external returns (uint);
-    function mintBehalf(address receiver, uint mintAmount) external returns (uint);
     function redeem(uint redeemTokens) external returns (uint);
     function redeemUnderlying(uint redeemAmount) external returns (uint);
     function borrow(uint borrowAmount) external returns (uint);
