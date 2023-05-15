@@ -4,27 +4,28 @@ import "../Utils/IBEP20.sol";
 
 contract VRTVaultAdminStorage {
     /**
-     * @notice Administrator for this contract
-     */
+    * @notice Administrator for this contract
+    */
     address public admin;
 
     /**
-     * @notice Pending administrator for this contract
-     */
+    * @notice Pending administrator for this contract
+    */
     address public pendingAdmin;
 
     /**
-     * @notice Active brains of VRT Vault
-     */
+    * @notice Active brains of VRT Vault
+    */
     address public implementation;
 
     /**
-     * @notice Pending brains of VAI Vault
-     */
+    * @notice Pending brains of VAI Vault
+    */
     address public pendingImplementation;
 }
 
 contract VRTVaultStorage is VRTVaultAdminStorage {
+
     /// @notice Guard variable for re-entrancy checks
     bool public _notEntered;
 
@@ -47,14 +48,4 @@ contract VRTVaultStorage is VRTVaultAdminStorage {
 
     // Info of each user that stakes tokens.
     mapping(address => UserInfo) public userInfo;
-
-    /// @notice block number after which no interest will be accrued
-    uint256 public lastAccruingBlock;
-
-    /**
-     * @dev This empty reserved space is put in place to allow future versions to add new
-     * variables without shifting down storage in the inheritance chain.
-     * See https://docs.openzeppelin.com/contracts/4.x/upgradeable#storage_gaps
-     */
-    uint256[49] private __gap;
 }

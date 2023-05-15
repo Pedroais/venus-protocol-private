@@ -1,32 +1,33 @@
 pragma solidity ^0.5.16;
 
-import "../../Utils/SafeMath.sol";
-import "../../Utils/IBEP20.sol";
-import "../XVS/IXVSVesting.sol";
+import "../Utils/SafeMath.sol";
+import "../Utils/IBEP20.sol";
+import "./IXVSVesting.sol";
 
 contract VRTConverterAdminStorage {
     /**
-     * @notice Administrator for this contract
-     */
+    * @notice Administrator for this contract
+    */
     address public admin;
 
     /**
-     * @notice Pending administrator for this contract
-     */
+    * @notice Pending administrator for this contract
+    */
     address public pendingAdmin;
 
     /**
-     * @notice Active brains of VRTConverter
-     */
+    * @notice Active brains of VRTConverter
+    */
     address public implementation;
 
     /**
-     * @notice Pending brains of VRTConverter
-     */
+    * @notice Pending brains of VRTConverter
+    */
     address public pendingImplementation;
 }
 
 contract VRTConverterStorage is VRTConverterAdminStorage {
+
     /// @notice Guard variable for re-entrancy checks
     bool public _notEntered;
 

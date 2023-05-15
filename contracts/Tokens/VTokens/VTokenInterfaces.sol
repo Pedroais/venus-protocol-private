@@ -1,19 +1,9 @@
 pragma solidity ^0.5.16;
 
-import "../../Comptroller/ComptrollerInterface.sol";
-import "../../InterestRateModels/InterestRateModel.sol";
+import "./ComptrollerInterface.sol";
+import "./InterestRateModel.sol";
 
 contract VTokenStorage {
-    /**
-     * @notice Container for borrow balance information
-     * @member principal Total balance (with accrued interest), after applying the most recent balance-changing action
-     * @member interestIndex Global borrowIndex as of the most recent balance-changing action
-     */
-    struct BorrowSnapshot {
-        uint principal;
-        uint interestIndex;
-    }
-
     /**
      * @dev Guard variable for re-entrancy checks
      */
@@ -103,12 +93,22 @@ contract VTokenStorage {
     /**
      * @notice Official record of token balances for each account
      */
-    mapping(address => uint) internal accountTokens;
+    mapping (address => uint) internal accountTokens;
 
     /**
      * @notice Approved token transfer amounts on behalf of others
      */
-    mapping(address => mapping(address => uint)) internal transferAllowances;
+    mapping (address => mapping (address => uint)) internal transferAllowances;
+
+    /**
+     * @notice Container for borrow balance information
+     * @member principal Total balance (with accrued interest), after applying the most recent balance-changing action
+     * @member interestIndex Global borrowIndex as of the most recent balance-changing action
+     */
+    struct BorrowSnapshot {
+        uint principal;
+        uint interestIndex;
+    }
 
     /**
      * @notice Mapping of account addresses to outstanding borrow balances
@@ -118,9 +118,10 @@ contract VTokenStorage {
 
 contract VTokenInterface is VTokenStorage {
     /**
-     * @notice Indicator that this is a vToken contract (for inspection)
+     * @notice Indicator that this is a VToken contract (for inspection)
      */
     bool public constant isVToken = true;
+
 
     /*** Market Events ***/
 
@@ -135,19 +136,9 @@ contract VTokenInterface is VTokenStorage {
     event Mint(address minter, uint mintAmount, uint mintTokens);
 
     /**
-     * @notice Event emitted when tokens are minted behalf by payer to receiver
-     */
-    event MintBehalf(address payer, address receiver, uint mintAmount, uint mintTokens);
-
-    /**
      * @notice Event emitted when tokens are redeemed
      */
     event Redeem(address redeemer, uint redeemAmount, uint redeemTokens);
-
-    /**
-     * @notice Event emitted when tokens are redeemed and fee is transferred
-     */
-    event RedeemFee(address redeemer, uint feeAmount, uint redeemTokens);
 
     /**
      * @notice Event emitted when underlying is borrowed
@@ -162,13 +153,8 @@ contract VTokenInterface is VTokenStorage {
     /**
      * @notice Event emitted when a borrow is liquidated
      */
-    event LiquidateBorrow(
-        address liquidator,
-        address borrower,
-        uint repayAmount,
-        address vTokenCollateral,
-        uint seizeTokens
-    );
+    event LiquidateBorrow(address liquidator, address borrower, uint repayAmount, address vTokenCollateral, uint seizeTokens);
+
 
     /*** Admin Events ***/
 
@@ -178,7 +164,7 @@ contract VTokenInterface is VTokenStorage {
     event NewPendingAdmin(address oldPendingAdmin, address newPendingAdmin);
 
     /**
-     * @notice Event emitted when pendingAdmin is accepted, which means admin has been updated
+     * @notice Event emitted when pendingAdmin is accepted, which means admin is updated
      */
     event NewAdmin(address oldAdmin, address newAdmin);
 
@@ -222,59 +208,36 @@ contract VTokenInterface is VTokenStorage {
      */
     event Failure(uint error, uint info, uint detail);
 
+
     /*** User Interface ***/
 
     function transfer(address dst, uint amount) external returns (bool);
-
     function transferFrom(address src, address dst, uint amount) external returns (bool);
-
     function approve(address spender, uint amount) external returns (bool);
-
+    function allowance(address owner, address spender) external view returns (uint);
+    function balanceOf(address owner) external view returns (uint);
     function balanceOfUnderlying(address owner) external returns (uint);
-
+    function getAccountSnapshot(address account) external view returns (uint, uint, uint, uint);
+    function borrowRatePerBlock() external view returns (uint);
+    function supplyRatePerBlock() external view returns (uint);
     function totalBorrowsCurrent() external returns (uint);
-
     function borrowBalanceCurrent(address account) external returns (uint);
-
+    function borrowBalanceStored(address account) public view returns (uint);
+    function exchangeRateCurrent() public returns (uint);
+    function exchangeRateStored() public view returns (uint);
+    function getCash() external view returns (uint);
+    function accrueInterest() public returns (uint);
     function seize(address liquidator, address borrower, uint seizeTokens) external returns (uint);
 
-    /*** Admin Function ***/
+
+    /*** Admin Functions ***/
+
     function _setPendingAdmin(address payable newPendingAdmin) external returns (uint);
-
-    /*** Admin Function ***/
     function _acceptAdmin() external returns (uint);
-
-    /*** Admin Function ***/
-    function _setReserveFactor(uint newReserveFactorMantissa) external returns (uint);
-
-    /*** Admin Function ***/
-    function _reduceReserves(uint reduceAmount) external returns (uint);
-
-    function balanceOf(address owner) external view returns (uint);
-
-    function allowance(address owner, address spender) external view returns (uint);
-
-    function getAccountSnapshot(address account) external view returns (uint, uint, uint, uint);
-
-    function borrowRatePerBlock() external view returns (uint);
-
-    function supplyRatePerBlock() external view returns (uint);
-
-    function getCash() external view returns (uint);
-
-    function exchangeRateCurrent() public returns (uint);
-
-    function accrueInterest() public returns (uint);
-
-    /*** Admin Function ***/
     function _setComptroller(ComptrollerInterface newComptroller) public returns (uint);
-
-    /*** Admin Function ***/
+    function _setReserveFactor(uint newReserveFactorMantissa) external returns (uint);
+    function _reduceReserves(uint reduceAmount) external returns (uint);
     function _setInterestRateModel(InterestRateModel newInterestRateModel) public returns (uint);
-
-    function borrowBalanceStored(address account) public view returns (uint);
-
-    function exchangeRateStored() public view returns (uint);
 }
 
 contract VBep20Storage {
@@ -285,27 +248,17 @@ contract VBep20Storage {
 }
 
 contract VBep20Interface is VBep20Storage {
+
     /*** User Interface ***/
 
     function mint(uint mintAmount) external returns (uint);
-
-    function mintBehalf(address receiver, uint mintAmount) external returns (uint);
-
     function redeem(uint redeemTokens) external returns (uint);
-
     function redeemUnderlying(uint redeemAmount) external returns (uint);
-
     function borrow(uint borrowAmount) external returns (uint);
-
     function repayBorrow(uint repayAmount) external returns (uint);
-
     function repayBorrowBehalf(address borrower, uint repayAmount) external returns (uint);
+    function liquidateBorrow(address borrower, uint repayAmount, VTokenInterface vTokenCollateral) external returns (uint);
 
-    function liquidateBorrow(
-        address borrower,
-        uint repayAmount,
-        VTokenInterface vTokenCollateral
-    ) external returns (uint);
 
     /*** Admin Functions ***/
 
@@ -331,11 +284,7 @@ contract VDelegatorInterface is VDelegationStorage {
      * @param allowResign Flag to indicate whether to call _resignImplementation on the old implementation
      * @param becomeImplementationData The encoded bytes data to be passed to _becomeImplementation
      */
-    function _setImplementation(
-        address implementation_,
-        bool allowResign,
-        bytes memory becomeImplementationData
-    ) public;
+    function _setImplementation(address implementation_, bool allowResign, bytes memory becomeImplementationData) public;
 }
 
 contract VDelegateInterface is VDelegationStorage {

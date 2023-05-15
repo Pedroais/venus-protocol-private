@@ -1,18 +1,11 @@
-pragma solidity 0.5.16;
-
-import "../Utils/SafeBEP20.sol";
-import "../Utils/IBEP20.sol";
+pragma solidity ^0.5.16;
+import "./SafeBEP20.sol";
+import "./IBEP20.sol";
+import "./VAIVaultProxy.sol";
 import "./VAIVaultStorage.sol";
 import "./VAIVaultErrorReporter.sol";
-import "@venusprotocol/governance-contracts/contracts/Governance/AccessControlledV5.sol";
 
-interface IVAIVaultProxy {
-    function _acceptImplementation() external returns (uint);
-
-    function admin() external returns (address);
-}
-
-contract VAIVault is VAIVaultStorage, AccessControlledV5 {
+contract VAIVault is VAIVaultStorage {
     using SafeMath for uint256;
     using SafeBEP20 for IBEP20;
 
@@ -24,12 +17,6 @@ contract VAIVault is VAIVaultStorage, AccessControlledV5 {
 
     /// @notice Event emitted when admin changed
     event AdminTransfered(address indexed oldAdmin, address indexed newAdmin);
-
-    /// @notice Event emitted when vault is paused
-    event VaultPaused(address indexed admin);
-
-    /// @notice Event emitted when vault is resumed after pause
-    event VaultResumed(address indexed admin);
 
     constructor() public {
         admin = msg.sender;
@@ -53,38 +40,10 @@ contract VAIVault is VAIVaultStorage, AccessControlledV5 {
     }
 
     /**
-     * @dev Prevents functions to execute when vault is paused.
-     */
-    modifier isActive() {
-        require(vaultPaused == false, "Vault is paused");
-        _;
-    }
-
-    /**
-     * @notice Pause vault
-     */
-    function pause() external {
-        _checkAccessAllowed("pause()");
-        require(!vaultPaused, "Vault is already paused");
-        vaultPaused = true;
-        emit VaultPaused(msg.sender);
-    }
-
-    /**
-     * @notice Resume vault
-     */
-    function resume() external {
-        _checkAccessAllowed("resume()");
-        require(vaultPaused, "Vault is not paused");
-        vaultPaused = false;
-        emit VaultResumed(msg.sender);
-    }
-
-    /**
      * @notice Deposit VAI to VAIVault for XVS allocation
      * @param _amount The amount to deposit to vault
      */
-    function deposit(uint256 _amount) external nonReentrant isActive {
+    function deposit(uint256 _amount) public nonReentrant {
         UserInfo storage user = userInfo[msg.sender];
 
         updateVault();
@@ -93,7 +52,7 @@ contract VAIVault is VAIVaultStorage, AccessControlledV5 {
         updateAndPayOutPending(msg.sender);
 
         // Transfer in the amounts from user
-        if (_amount > 0) {
+        if(_amount > 0) {
             vai.safeTransferFrom(address(msg.sender), address(this), _amount);
             user.amount = user.amount.add(_amount);
         }
@@ -106,23 +65,15 @@ contract VAIVault is VAIVaultStorage, AccessControlledV5 {
      * @notice Withdraw VAI from VAIVault
      * @param _amount The amount to withdraw from vault
      */
-    function withdraw(uint256 _amount) external nonReentrant isActive {
+    function withdraw(uint256 _amount) public nonReentrant {
         _withdraw(msg.sender, _amount);
     }
 
     /**
      * @notice Claim XVS from VAIVault
      */
-    function claim() external nonReentrant isActive {
+    function claim() public nonReentrant {
         _withdraw(msg.sender, 0);
-    }
-
-    /**
-     * @notice Claim XVS from VAIVault
-     * @param account The account for which to claim XVS
-     */
-    function claim(address account) external nonReentrant isActive {
-        _withdraw(account, 0);
     }
 
     /**
@@ -137,7 +88,7 @@ contract VAIVault is VAIVaultStorage, AccessControlledV5 {
         updateVault();
         updateAndPayOutPending(account); // Update balances of account this is not withdrawal but claiming XVS farmed
 
-        if (_amount > 0) {
+        if(_amount > 0) {
             user.amount = user.amount.sub(_amount);
             vai.safeTransfer(address(account), _amount);
         }
@@ -150,7 +101,8 @@ contract VAIVault is VAIVaultStorage, AccessControlledV5 {
      * @notice View function to see pending XVS on frontend
      * @param _user The user to see pending XVS
      */
-    function pendingXVS(address _user) public view returns (uint256) {
+    function pendingXVS(address _user) public view returns (uint256)
+    {
         UserInfo storage user = userInfo[_user];
 
         return user.amount.mul(accXVSPerShare).div(1e18).sub(user.rewardDebt);
@@ -163,7 +115,7 @@ contract VAIVault is VAIVaultStorage, AccessControlledV5 {
     function updateAndPayOutPending(address account) internal {
         uint256 pending = pendingXVS(account);
 
-        if (pending > 0) {
+        if(pending > 0) {
             safeXVSTransfer(account, pending);
         }
     }
@@ -188,10 +140,10 @@ contract VAIVault is VAIVaultStorage, AccessControlledV5 {
     /**
      * @notice Function that updates pending rewards
      */
-    function updatePendingRewards() external isActive {
+    function updatePendingRewards() public {
         uint256 newRewards = xvs.balanceOf(address(this)).sub(xvsBalance);
 
-        if (newRewards > 0) {
+        if(newRewards > 0) {
             xvsBalance = xvs.balanceOf(address(this)); // If there is no change the balance didn't change
             pendingRewards = pendingRewards.add(newRewards);
         }
@@ -202,8 +154,7 @@ contract VAIVault is VAIVaultStorage, AccessControlledV5 {
      */
     function updateVault() internal {
         uint256 vaiBalance = vai.balanceOf(address(this));
-        if (vaiBalance == 0) {
-            // avoids division by 0 errors
+        if (vaiBalance == 0) { // avoids division by 0 errors
             return;
         }
 
@@ -214,14 +165,14 @@ contract VAIVault is VAIVaultStorage, AccessControlledV5 {
     /**
      * @dev Returns the address of the current admin
      */
-    function getAdmin() external view returns (address) {
+    function getAdmin() public view returns (address) {
         return admin;
     }
 
     /**
      * @dev Burn the current admin
      */
-    function burnAdmin() external onlyAdmin {
+    function burnAdmin() public onlyAdmin {
         emit AdminTransfered(admin, address(0));
         admin = address(0);
     }
@@ -229,7 +180,7 @@ contract VAIVault is VAIVaultStorage, AccessControlledV5 {
     /**
      * @dev Set the current admin to new address
      */
-    function setNewAdmin(address newAdmin) external onlyAdmin {
+    function setNewAdmin(address newAdmin) public onlyAdmin {
         require(newAdmin != address(0), "new owner is the zero address");
         emit AdminTransfered(admin, newAdmin);
         admin = newAdmin;
@@ -237,25 +188,15 @@ contract VAIVault is VAIVaultStorage, AccessControlledV5 {
 
     /*** Admin Functions ***/
 
-    function _become(IVAIVaultProxy vaiVaultProxy) external {
+    function _become(VAIVaultProxy vaiVaultProxy) public {
         require(msg.sender == vaiVaultProxy.admin(), "only proxy admin can change brains");
         require(vaiVaultProxy._acceptImplementation() == 0, "change not authorized");
     }
 
-    function setVenusInfo(address _xvs, address _vai) external onlyAdmin {
-        require(_xvs != address(0) && _vai != address(0), "addresses must not be zero");
+    function setVenusInfo(address _xvs, address _vai) public onlyAdmin {
         xvs = IBEP20(_xvs);
         vai = IBEP20(_vai);
 
         _notEntered = true;
-    }
-
-    /**
-     * @notice Sets the address of the access control of this contract
-     * @dev Admin function to set the access control address
-     * @param newAccessControlAddress New address for the access control
-     */
-    function setAccessControl(address newAccessControlAddress) external onlyAdmin {
-        _setAccessControlManager(newAccessControlAddress);
     }
 }

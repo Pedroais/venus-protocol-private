@@ -1,26 +1,26 @@
 pragma solidity ^0.5.16;
-import "../Utils/SafeMath.sol";
-import "../Utils/IBEP20.sol";
+import "./SafeMath.sol";
+import "./IBEP20.sol";
 
 contract VAIVaultAdminStorage {
     /**
-     * @notice Administrator for this contract
-     */
+    * @notice Administrator for this contract
+    */
     address public admin;
 
     /**
-     * @notice Pending administrator for this contract
-     */
+    * @notice Pending administrator for this contract
+    */
     address public pendingAdmin;
 
     /**
-     * @notice Active brains of VAI Vault
-     */
+    * @notice Active brains of VAI Vault
+    */
     address public vaiVaultImplementation;
 
     /**
-     * @notice Pending brains of VAI Vault
-     */
+    * @notice Pending brains of VAI Vault
+    */
     address public pendingVAIVaultImplementation;
 }
 
@@ -51,14 +51,4 @@ contract VAIVaultStorage is VAIVaultAdminStorage {
 
     // Info of each user that stakes tokens.
     mapping(address => UserInfo) public userInfo;
-
-    /// @notice pause indicator for Vault
-    bool public vaultPaused;
-
-    /**
-     * @dev This empty reserved space is put in place to allow future versions to add new
-     * variables without shifting down storage in the inheritance chain.
-     * See https://docs.openzeppelin.com/contracts/4.x/upgradeable#storage_gaps
-     */
-    uint256[49] private __gap;
 }
